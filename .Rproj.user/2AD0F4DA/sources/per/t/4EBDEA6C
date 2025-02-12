@@ -1,0 +1,25 @@
+{
+    "id": "4EBDEA6C",
+    "path": "~/OneDrive - Universidade de Aveiro/Rdir/TextMining/Rscripts/3_TidyData_Linguistic.R",
+    "project_path": "Rscripts/3_TidyData_Linguistic.R",
+    "type": "r_source",
+    "hash": "118684490",
+    "contents": "",
+    "dirty": false,
+    "created": 1677161849347.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "cursorPosition": "64,0",
+        "scrollLine": "45",
+        "notebook_format": "html_document"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1648050777,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1648050777,
+    "read_only": false,
+    "read_only_alternatives": []
+}

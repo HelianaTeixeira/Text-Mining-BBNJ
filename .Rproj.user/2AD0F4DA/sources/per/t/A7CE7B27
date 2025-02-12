@@ -1,0 +1,25 @@
+{
+    "id": "A7CE7B27",
+    "path": "~/OneDrive - Universidade de Aveiro/Rdir/TextMining/Rscripts/6_Sentiment_analys.R",
+    "project_path": "Rscripts/6_Sentiment_analys.R",
+    "type": "r_source",
+    "hash": "3057881550",
+    "contents": "",
+    "dirty": false,
+    "created": 1677161569451.0,
+    "source_on_save": false,
+    "relative_order": 4,
+    "properties": {
+        "cursorPosition": "31,27",
+        "scrollLine": "14",
+        "notebook_format": "html_document"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1647617394,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1647617394,
+    "read_only": false,
+    "read_only_alternatives": []
+}

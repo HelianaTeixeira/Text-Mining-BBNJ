@@ -1,0 +1,110 @@
+
+#'  Keyword Extraction
+#'  author:    Heliana Teixeira - code credits to:
+#'             UDPipe C++ library and models provided by Milan Straka 
+#'             available at (https://github.com/ufal/udpipe)
+#'  workplace: here
+#'  date:      24-05-2021
+
+#' Clear R workspace
+rm(list = ls()) 
+library(here)0
+here::here()
+
+#' Load data
+Fname.dat <- (here("Data", "abstracts.csv"))
+data <- read.csv(file = Fname.dat, header = TRUE, sep = ";",
+                   dec = ".",quote = "\"" ,stringsAsFactors=F) #'  add quote = "\"" due to presence of apostrophies ( ' ) causing problems reading data
+
+#' Adapt code to fields of interest for analysis
+data$SourcePubl<- as.factor(data$SourcePubl) #' field
+data$Range <- as.factor(data$Range) #' field
+data$Country <- as.factor(data$Country) #' field
+
+#' Keyword extraction techniques to find keywords in plain text
+library(udpipe)
+library(textrank)
+
+ud_model <- udpipe_download_model(language = "english")
+ud_model <- udpipe_load_model(ud_model$file_model)
+x <- udpipe_annotate(ud_model, x = data$Abstract) #' Select field: Objectives, Abstract, etc
+x <- as.data.frame(x)
+
+#'  Option 1: Extracting only nouns
+stats <- subset(x, upos %in% "NOUN")
+stats <- txt_freq(x = stats$lemma)
+library(lattice)
+stats$key <- factor(stats$key, levels = rev(stats$key))
+barchart(key ~ freq, data = head(stats, 30), col = "cadetblue", main = "Most occurring nouns", xlab = "Freq")
+
+#'  Option 2: Collocation & co-occurrences
+#'   Collocation (words following one another)
+colloc <- keywords_collocation(x = x, 
+                              term = "token", group = c("doc_id","paragraph_id","sentence_id"), 
+                              ngram_max = 4, n_min = 15)
+head(colloc)
+
+#'  Co-occurrences: How frequent do words occur in the same sentence, in this case only nouns or adjectives
+stats <- cooccurrence(x = subset(x, upos %in% c("NOUN", "ADJ")), 
+                      term = "lemma", group = c("doc_id", "paragraph_id", "sentence_id"))
+#'  Co-occurrences: How frequent do words follow one another
+stats <- cooccurrence(x = x$lemma, 
+                      relevant = x$upos %in% c("NOUN", "ADJ"))
+#'  Co-occurrences: How frequent do words follow one another even if we would skip 2 words in between
+stats <- cooccurrence(x = x$lemma, 
+                      relevant = x$upos %in% c("NOUN", "ADJ"), skipgram = 2)
+head(stats)
+
+#' Visualisation of co-occurrences using a network plot for the top 30 most frequent co-occurring nouns and adjectives.
+library(igraph)
+library(ggraph)
+library(ggplot2)
+wordnetwork <- head(stats, 30)
+wordnetwork <- graph_from_data_frame(wordnetwork)
+ggraph(wordnetwork, layout = "fr") +
+  geom_edge_link(aes(width = cooc, edge_alpha = cooc), edge_colour = "lightblue") +
+  geom_node_text(aes(label = name), col = "dodgerblue4", size = 4) +
+  theme_graph(base_family = "Arial Narrow") +
+  theme(legend.position = "none") +
+  labs(title = "Cooccurrences within 3 words distance", subtitle = "Nouns & Adjectives")
+
+#'  Option 3: Textrank (word network ordered by Google Pagerank)
+stats <- textrank_keywords(x$lemma, 
+                           relevant = x$upos %in% c("NOUN", "ADJ"), 
+                           ngram_max = 8, sep = " ")
+stats <- subset(stats$keywords, ngram > 1 & freq >= 15) #' 5
+#' Visualisation
+library(wordcloud)
+wordcloud(words = stats$keyword, freq = stats$freq)
+
+#'  Option 4: Rapid Automatic Keyword Extraction: RAKE
+stats <- keywords_rake(x = x, 
+                       term = "token", group = c("doc_id", "paragraph_id", "sentence_id"),
+                       relevant = x$upos %in% c("NOUN", "ADJ"),
+                       ngram_max = 4)
+head(subset(stats, freq > 3))
+
+#'  Option 5: Phrases
+#'  Simple noun phrases (a adjective+noun, pre/postposition, optional determiner and another adjective+noun)
+x$phrase_tag <- as_phrasemachine(x$upos, type = "upos")
+stats <- keywords_phrases(x = x$phrase_tag, term = x$token, 
+                          pattern = "(A|N)+N(P+D*(A|N)*N)*", 
+                          is_regex = TRUE, ngram_max = 4, detailed = FALSE)
+head(subset(stats, ngram > 2))
+
+#'  Option 6: Use dependency parsing output to get the nominal subject and the adjective of it
+stats <- merge(x, x, 
+               by.x = c("doc_id", "paragraph_id", "sentence_id", "head_token_id"),
+               by.y = c("doc_id", "paragraph_id", "sentence_id", "token_id"),
+               all.x = TRUE, all.y = FALSE, 
+               suffixes = c("", "_parent"), sort = FALSE)
+stats <- subset(stats, dep_rel %in% "nsubj" & upos %in% c("NOUN") & upos_parent %in% c("ADJ"))
+stats$term <- paste(stats$lemma_parent, stats$lemma, sep = " ")
+stats <- txt_freq(stats$term)
+library(wordcloud)
+win.graph(width=10,height=10)
+wordcloud(words = stats$key, freq = stats$freq, min.freq = 3, max.words = 100,
+          random.order = FALSE, colors = brewer.pal(6, "Dark2"))
+
+#' Turn the R script into markdown output
+knitr::spin
