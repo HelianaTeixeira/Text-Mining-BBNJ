@@ -67,3 +67,4 @@ vignettes/*.pdf
 *README_cache/
 *README_files/
 
+/.Rproj.user
